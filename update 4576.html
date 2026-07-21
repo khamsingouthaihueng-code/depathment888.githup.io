@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ລະບົບບັນທຶກເອກະສານຂາເຂົ້າ-ຂາອອກ</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Noto Sans Lao) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for Export to Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans Lao', sans-serif;
+            background-color: #f4f6f9;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* ພາບພື້ນຫຼັງໂລໂກ້ (Watermark Background) */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 550px;
+            height: 550px;
+            background-image: url('LPDR_National_Assembly_logo.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: 0.08; /* ປັບຄວາມຈາງຂອງພາບພື້ນຫຼັງ */
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .login-box {
+            max-width: 420px;
+            margin: 60px auto;
+        }
+        
+        .login-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+
+        .header-logo {
+            width: 50px;
+            height: auto;
+            margin-right: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        .status-box {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+        
+        .form-check-label {
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            margin: 1px;
+        }
+
+        /* ປັບຄວາມໃສຂອງ Card ໃຫ້ເຫັນພື້ນຫຼັງຈາງໆ */
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. ໜ້າລ໋ອກອິນ (Login Section) -->
+    <div id="loginSection" class="container">
+        <div class="card login-box shadow-lg border-0 rounded-3">
+            <div class="card-body p-4 text-center">
+                <!-- ໂລໂກ້ໜ້າ Login -->
+                <img src="LPDR_National_Assembly_logo.png" alt="ໂລໂກ້ສະພາແຫ່ງຊາດ" class="login-logo">
+                <h4 class="fw-bold mb-1">ຫ້ອງວ່າການສະພາແຫ່ງຊາດ</h4>
+                <p class="text-primary fw-semibold mb-3">ລະບົບບັນທຶກເອກະສານຂາເຂົ້າ-ຂາອອກ ກົມຈັດຕັ້ງ</p>
+                
+                <form id="loginForm">
+                    <div class="mb-3 text-start">
+                        <label class="form-label">ຊື່ຜູ້ໃຊ້ (Username)</label>
+                        <input type="text" id="username" class="form-control" placeholder="admin" required>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label">ລະຫັດຜ່ານ (Password)</label>
+                        <input type="password" id="password" class="form-control" placeholder="****" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">ເຂົ້າສູ່ລະບົບ</button>
+                </form>
+                <div class="mt-3 text-muted small">
+                    *(ທົດລອງໃຊ້: User: <b>admin</b> | Pass: <b>****</b>)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ໜ້າຫຼັກຂອງລະບົບ (Main System Dashboard) -->
+    <div id="mainSection" class="container-fluid px-4 py-4 hidden">
+        <!-- Header ພ້ອມໂລໂກ້ -->
+        <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+            <div class="d-flex align-items-center">
+                <img src="LPDR_National_Assembly_logo.png" alt="ໂລໂກ້ສະພາແຫ່ງຊາດ" class="header-logo">
+                <div>
+                    <h4 class="mb-0 text-primary fw-bold">ກົມຈັດຕັ້ງ ລະບົບບັນທຶກເອກະສານຂາເຂົ້າ-ຂາອອກ</h4>
+                    <small class="text-muted">ຫ້ອງວ່າການສະພາແຫ່ງຊາດ </small>
+                </div>
+            </div>
+            <button onclick="logout()" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket"></i> ອອກຈາກລະບົບ</button>
+        </div>
+
+        <div class="row">
+            <!-- ຟອມປ້ອນ/ແກ້ໄຂ ຂໍ້ມູນ -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white fw-bold" id="formTitle">
+                        <i class="fa-solid fa-plus me-1"></i> ຟອມບັນທຶກເອກະສານ
+                    </div>
+                    <div class="card-body">
+                        <form id="docForm">
+                            <input type="hidden" id="docId">
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">ປະເພດການຮັບ-ສົ່ງ <span class="text-danger">*</span></label>
+                                <select id="ioType" class="form-select" onchange="toggleRecipientOptions()" required>
+                                    <option value="ເອກະສານຂາເຂົ້າ">ເອກະສານຂາເຂົ້າ</option>
+                                    <option value="ເອກະສານຂາອອກ">ເອກະສານຂາອອກ</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">ເອກະສານເລກທີ <span class="text-danger">*</span></label>
+                                <input type="text" id="docNo" class="form-control" placeholder="ເຊັ່ນ: 123/ສນຍ" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">ຊື່ເອກະສານ/ເນື້ອໃນ <span class="text-danger">*</span></label>
+                                <textarea id="docTitle" class="form-control" rows="2" placeholder="ປ້ອນຊື່ເອກະສານ..." required></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">ປະເພດເອກະສານ <span class="text-danger">*</span></label>
+                                <select id="docCategory" class="form-select" required>
+                                    <option value="">-- ເລືອກປະເພດ --</option>
+                                    <option value="ໜັງສືສະເໜີ">ໜັງສືສະເໜີ</option>
+                                    <option value="ລາຍງານ">ລາຍງານ</option>
+                                    <option value="ຂໍ້ຕົກລົງ">ຂໍ້ຕົກລົງ</option>
+                                    <option value="ມະຕິ">ມະຕິ</option>
+                                    <option value="ບຸກຄົນ">ບຸກຄົນ</option>
+                                    <option value="ອື່ນໆ">ອື່ນໆ</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">ພາກສ່ວນ/ໜ່ວຍງານ <span class="text-danger">*</span></label>
+                                <input type="text" id="department" class="form-control" placeholder="ເຊັ່ນ: ຫ້ອງການສັງກັດ, ກະຊວງ..." required>
+                            </div>
+
+                            <!-- ຜູ້ຮັບພິຈາລະນາ (ຂາເຂົ້າ) / ສົ່ງອອກໄປຫາ (ຂາອອກ) -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" id="recipientLabel">ຜູ້ຮັບພິຈາລະນາ <span class="text-danger">*</span></label>
+                                <select id="recipientSelect" class="form-select mb-2" onchange="toggleCustomRecipient()" required>
+                                    <!-- Options ຈະປ່ຽນຕາມປະເພດການຮັບ-ສົ່ງ -->
+                                </select>
+                                <input type="text" id="customRecipient" class="form-control hidden" placeholder="ປ້ອນຊື່/ຕຳແໜ່ງຜູ້ຮັບເພີ່ມເຕີມ...">
+                            </div>
+
+                            <!-- Checkbox ຕິດຕາມສະຖານະການກວດກາ ແລະ ລາຍເຊັນ -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-primary"><i class="fa-solid fa-list-check me-1"></i> ຂັ້ນຕອນການກວດກາ / ລາຍເຊັນ</label>
+                                <div class="status-box">
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input status-chk" type="checkbox" value="ເອກະສານກຳລັງກວດກາຜ່ານຮອງຫົວໜ້າກົມ" id="chk1">
+                                        <label class="form-check-label" for="chk1">ເອກະສານກຳລັງກວດກາຜ່ານຮອງຫົວໜ້າກົມ</label>
+                                    </div>
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input status-chk" type="checkbox" value="ຫົວໜ້າກົມ" id="chk2">
+                                        <label class="form-check-label" for="chk2">ຂໍລາຍເຊັນຫົວໜ້າກົມ</label>
+                                    </div>
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input status-chk" type="checkbox" value="ຂໍໃບກິດສຳພັນຫ້ອງວ່າການຫາປະທານ" id="chk3">
+                                        <label class="form-check-label" for="chk3">ຂໍໃບກິດສຳພັນຫ້ອງວ່າການຫາປະທານ</label>
+                                    </div>
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input status-chk" type="checkbox" value="ຂໍລາຍເຊັນຫົວໜ້າຫ້ອງວ່າການ" id="chk4">
+                                        <label class="form-check-label" for="chk4">ຂໍລາຍເຊັນຫົວໜ້າຫ້ອງວ່າການ</label>
+                                    </div>
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input status-chk" type="checkbox" value="ຮອງປະທານສະພາແຫ່ງຊາດ" id="chk5">
+                                        <label class="form-check-label" for="chk5">ຂໍລາຍເຊັນຮອງປະທານສະພາແຫ່ງຊາດ</label>
+                                    </div>
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input status-chk" type="checkbox" value="ປະທານສະພາ" id="chk6">
+                                        <label class="form-check-label" for="chk6">ຂໍລາຍເຊັນປະທານສະພາ</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input status-chk" type="checkbox" value="ສຳເລັດ" id="chk7">
+                                        <label class="form-check-label" for="chk7">ສຳເລັດ</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">ວັນທີ ເດືອນ ປີ <span class="text-danger">*</span></label>
+                                <input type="date" id="docDate" class="form-control" required>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" id="saveBtn" class="btn btn-success"><i class="fa-solid fa-save"></i> ບັນທຶກຂໍ້ມູນ</button>
+                                <button type="button" id="cancelBtn" onclick="resetForm()" class="btn btn-secondary hidden">ຍົກເລີກການແກ້ໄຂ</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ຕາຕະລາງສະແດງຂໍ້ມູນ ແລະ ຟັງຊັນຄົ້ນຫາ -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <!-- ຊ່ອງຄົ້ນຫາ ແລະ ປຸ່ມ Excel -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-7">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="text" id="searchInput" onkeyup="searchDocument()" class="form-control" placeholder="ຄົ້ນຫາ: ຊື່, ເລກທີ, ພາກສ່ວນ, ສະຖານະ...">
+                                </div>
+                            </div>
+                            <div class="col-md-5 text-end">
+                                <button onclick="exportToExcel()" class="btn btn-outline-success w-100">
+                                    <i class="fa-solid fa-file-excel me-1"></i> ດາວໂຫຼດ Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ຕາຕະລາງ -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ວັນທີ</th>
+                                        <th>ເລກທີ</th>
+                                        <th>ຊື່ເອກະສານ</th>
+                                        <th>ປະເພດ</th>
+                                        <th>ພາກສ່ວນ</th>
+                                        <th>ຜູ້ຮັບ/ສົ່ງ</th>
+                                        <th>ຂັ້ນຕອນ/ສະຖານະ</th>
+                                        <th>ຂາເຂົ້າ/ອອກ</th>
+                                        <th class="text-center">ຈັດການ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="documentTableBody">
+                                    <!-- ຂໍ້ມູນຈະສະແດງຢູ່ບ່ອນນີ້ -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. ລະບົບ Login/Logout ---
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+
+            if(u === 'admin' && p === '123456') {
+                localStorage.setItem('isLoggedIn', 'true');
+                checkAuth();
+            } else {
+                alert('ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານ ບໍ່ຖືກຕ້ອງ!');
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            checkAuth();
+        }
+
+        function checkAuth() {
+            const loggedIn = localStorage.getItem('isLoggedIn');
+            if(loggedIn === 'true') {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainSection').classList.remove('hidden');
+                toggleRecipientOptions();
+                loadDocuments();
+            } else {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('mainSection').classList.add('hidden');
+            }
+        }
+
+        // --- 2. ປ່ຽນແປງ ລາຍຊື່ຜູ້ຮັບຕາມ (ຂາເຂົ້າ / ຂາອອກ) ---
+        function toggleRecipientOptions() {
+            const ioType = document.getElementById('ioType').value;
+            const label = document.getElementById('recipientLabel');
+            const select = document.getElementById('recipientSelect');
+            
+            select.innerHTML = '';
+
+            if (ioType === 'ເອກະສານຂາເຂົ້າ') {
+                label.innerHTML = 'ຜູ້ຮັບພິຈາລະນາ <span class="text-danger">*</span>';
+                const options = [
+                    'ຫົວໜ້າກົມ',
+                    'ຮອງຫົວໜ້າກົມ',
+                    'ຫົວໜ້າພະແນກ',
+                    'ຮອງຫົວໜ້າພະແນກ',
+                    'ວິຊາການຮັບຜິດຊອບ',
+                    'Other'
+                ];
+                options.forEach(opt => {
+                    const optElem = document.createElement('option');
+                    optElem.value = opt === 'Other' ? 'custom' : opt;
+                    optElem.textContent = opt === 'Other' ? 'ປ້ອນຊື່ເອງ...' : opt;
+                    select.appendChild(optElem);
+                });
+            } else {
+                label.innerHTML = 'ສົ່ງອອກໄປຫາ <span class="text-danger">*</span>';
+                const options = [
+                    'ທ່ານຫົວໜ້າກົມ',
+                    'ຮອງຫົວໜ້າກົມ',
+                    'ຫົວໜ້າຫ້ອງວ່າການ',
+                    'ຮອງປະທານສະພາແຫ່ງຊາດ',
+                    'ປະທານສະພາແຫ່ງຊາດ',
+                    'Other'
+                ];
+                options.forEach(opt => {
+                    const optElem = document.createElement('option');
+                    optElem.value = opt === 'Other' ? 'custom' : opt;
+                    optElem.textContent = opt === 'Other' ? 'ປ້ອນຊື່ເອງ...' : opt;
+                    select.appendChild(optElem);
+                });
+            }
+            toggleCustomRecipient();
+        }
+
+        function toggleCustomRecipient() {
+            const select = document.getElementById('recipientSelect');
+            const customInput = document.getElementById('customRecipient');
+            if (select.value === 'custom') {
+                customInput.classList.remove('hidden');
+                customInput.required = true;
+            } else {
+                customInput.classList.add('hidden');
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+
+        // --- 3. ການຈັດການຂໍ້ມູນເອກະສານ (CRUD Operations) ---
+        let documents = JSON.parse(localStorage.getItem('documents')) || [];
+
+        document.getElementById('docForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('docId').value;
+            const ioType = document.getElementById('ioType').value;
+            const docNo = document.getElementById('docNo').value;
+            const docTitle = document.getElementById('docTitle').value;
+            const docCategory = document.getElementById('docCategory').value;
+            const department = document.getElementById('department').value;
+            
+            // ດຶງຂໍ້ມູນຜູ້ຮັບ/ສົ່ງ
+            const recSelect = document.getElementById('recipientSelect').value;
+            const recipient = recSelect === 'custom' ? document.getElementById('customRecipient').value : recSelect;
+            
+            // ດຶງຄ່າ Checkboxes ທີ່ຖືກຕິກຖືກ
+            const selectedStatuses = [];
+            document.querySelectorAll('.status-chk:checked').forEach(chk => {
+                selectedStatuses.push(chk.value);
+            });
+
+            const docDate = document.getElementById('docDate').value;
+
+            if(id) {
+                // ແກ້ໄຂຂໍ້ມູນ
+                const index = documents.findIndex(d => d.id == id);
+                documents[index] = { id, ioType, docNo, docTitle, docCategory, department, recipient, statuses: selectedStatuses, docDate };
+            } else {
+                // ເພີ່ມຂໍ້ມູນໃຫມ່
+                const newDoc = {
+                    id: Date.now(),
+                    ioType, docNo, docTitle, docCategory, department, recipient, statuses: selectedStatuses, docDate
+                };
+                documents.push(newDoc);
+            }
+
+            localStorage.setItem('documents', JSON.stringify(documents));
+            resetForm();
+            loadDocuments();
+        });
+
+        function loadDocuments(data = documents) {
+            const tbody = document.getElementById('documentTableBody');
+            tbody.innerHTML = '';
+
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">ບໍ່ມີຂໍ້ມູນເອກະສານ</td></tr>`;
+                return;
+            }
+
+            data.forEach(doc => {
+                const badgeColor = doc.ioType === 'ເອກະສານຂາເຂົ້າ' ? 'bg-success' : 'bg-info text-dark';
+                
+                // ສ້າງ Badges ສະແດງສະຖານະ
+                let statusHtml = '-';
+                if(doc.statuses && doc.statuses.length > 0) {
+                    statusHtml = doc.statuses.map(st => {
+                        const bg = st === 'ສຳເລັດ' ? 'bg-success' : 'bg-primary';
+                        return `<span class="badge ${bg} status-badge"><i class="fa-solid fa-check me-1"></i>${st}</span>`;
+                    }).join(' ');
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${doc.docDate}</td>
+                        <td><span class="fw-bold">${doc.docNo}</span></td>
+                        <td>${doc.docTitle}</td>
+                        <td><span class="badge bg-secondary">${doc.docCategory}</span></td>
+                        <td>${doc.department}</td>
+                        <td><span class="text-primary fw-semibold">${doc.recipient || '-'}</span></td>
+                        <td style="max-width: 220px;">${statusHtml}</td>
+                        <td><span class="badge ${badgeColor}">${doc.ioType}</span></td>
+                        <td class="text-center">
+                            <button onclick="editDoc(${doc.id})" class="btn btn-sm btn-outline-warning me-1"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteDoc(${doc.id})" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function editDoc(id) {
+            const doc = documents.find(d => d.id == id);
+            if(doc) {
+                document.getElementById('docId').value = doc.id;
+                document.getElementById('ioType').value = doc.ioType;
+                
+                toggleRecipientOptions();
+
+                document.getElementById('docNo').value = doc.docNo;
+                document.getElementById('docTitle').value = doc.docTitle;
+                document.getElementById('docCategory').value = doc.docCategory;
+                document.getElementById('department').value = doc.department;
+
+                // ຕັ້ງຄ່າ Dropdown ຜູ້ຮັບ
+                const select = document.getElementById('recipientSelect');
+                let found = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === doc.recipient) {
+                        select.value = doc.recipient;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    select.value = 'custom';
+                    toggleCustomRecipient();
+                    document.getElementById('customRecipient').value = doc.recipient;
+                } else {
+                    toggleCustomRecipient();
+                }
+
+                // ຕັ້ງຄ່າ Checkboxes
+                document.querySelectorAll('.status-chk').forEach(chk => {
+                    chk.checked = doc.statuses ? doc.statuses.includes(chk.value) : false;
+                });
+
+                document.getElementById('docDate').value = doc.docDate;
+
+                document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-pen me-1"></i> ແກ້ໄຂຂໍ້ມູນເອກະສານ';
+                document.getElementById('saveBtn').className = 'btn btn-warning';
+                document.getElementById('saveBtn').innerHTML = '<i class="fa-solid fa-save"></i> ບັນທຶກການແກ້ໄຂ';
+                document.getElementById('cancelBtn').classList.remove('hidden');
+            }
+        }
+
+        function deleteDoc(id) {
+            if(confirm('ທ່ານຕ້ອງການລຶບເອກະສານນີ້ແທ້ ຫຼື ບໍ່?')) {
+                documents = documents.filter(d => d.id != id);
+                localStorage.setItem('documents', JSON.stringify(documents));
+                loadDocuments();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('docForm').reset();
+            document.getElementById('docId').value = '';
+            document.querySelectorAll('.status-chk').forEach(chk => chk.checked = false);
+            document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-plus me-1"></i> ຟອມບັນທຶກເອກະສານ';
+            document.getElementById('saveBtn').className = 'btn btn-success';
+            document.getElementById('saveBtn').innerHTML = '<i class="fa-solid fa-save"></i> ບັນທຶກຂໍ້ມູນ';
+            document.getElementById('cancelBtn').classList.add('hidden');
+            toggleRecipientOptions();
+        }
+
+        // --- 4. ລະບົບຄົ້ນຫາ (Search Engine) ---
+        function searchDocument() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = documents.filter(doc => {
+                const statusStr = doc.statuses ? doc.statuses.join(' ').toLowerCase() : '';
+                return doc.docTitle.toLowerCase().includes(keyword) ||
+                       doc.docNo.toLowerCase().includes(keyword) ||
+                       doc.department.toLowerCase().includes(keyword) ||
+                       doc.docCategory.toLowerCase().includes(keyword) ||
+                       (doc.recipient && doc.recipient.toLowerCase().includes(keyword)) ||
+                       statusStr.includes(keyword);
+            });
+            loadDocuments(filtered);
+        }
+
+        // --- 5. ດາວໂຫຼດເປັນ Excel (.xlsx) ---
+        function exportToExcel() {
+            if(documents.length === 0) {
+                alert('ບໍ່ມີຂໍ້ມູນທີ່ຈະດາວໂຫຼດ!');
+                return;
+            }
+
+            const exportData = documents.map((doc, index) => ({
+                "ລຳດັບ": index + 1,
+                "ວັນທີ": doc.docDate,
+                "ເລກທີເອກະສານ": doc.docNo,
+                "ຊື່ເອກະສານ/ເນື້ອໃນ": doc.docTitle,
+                "ປະເພດເອກະສານ": doc.docCategory,
+                "ພາກສ່ວນ/ໜ່ວຍງານ": doc.department,
+                "ຜູ້ຮັບ/ສົ່ງເອກະສານ": doc.recipient || '-',
+                "ສະຖານະການກວດກາ/ລາຍເຊັນ": doc.statuses ? doc.statuses.join(', ') : '-',
+                "ຂາເຂົ້າ/ຂາອອກ": doc.ioType
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Document_Report");
+
+            XLSX.writeFile(workbook, `Document_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        // ກວດສອບ Login ເມື່ອເປີດໜ້າເວັບ
+        checkAuth();
+    </script>
+</body>
+</html>
